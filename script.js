@@ -78,8 +78,8 @@ function getDownloadTimeLeft() {
     const lastDownload = localStorage.getItem(key);
     if (!lastDownload) return 0;
     const timeDiff = Date.now() - parseInt(lastDownload);
-    const fourMinute = 4 * 60 * 1000;
-    const timeLeft = fourMinute - timeDiff;
+    const fiveMinute = 5 * 60 * 1000;
+    const timeLeft = fiveMinute - timeDiff;
     return timeLeft > 0 ? timeLeft : 0;
 }
 

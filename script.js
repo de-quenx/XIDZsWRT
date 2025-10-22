@@ -63,6 +63,17 @@ function formatDate(dateString) {
     });
 }
 
+function censorUrl(url) {
+    try {
+        const urlObj = new URL(url);
+        const pathname = urlObj.pathname;
+        const filename = pathname.split('/').pop();
+        return filename || url;
+    } catch (error) {
+        return url;
+    }
+}
+
 function adjustDownloadCount(firmwareUrl, originalCount) {
     if (!userIP) return originalCount;
     const downloadedKey = `downloaded_${firmwareUrl}_${userIP}`;
@@ -78,8 +89,8 @@ function getDownloadTimeLeft() {
     const lastDownload = localStorage.getItem(key);
     if (!lastDownload) return 0;
     const timeDiff = Date.now() - parseInt(lastDownload);
-    const fiveMinute = 5 * 60 * 1000;
-    const timeLeft = fiveMinute - timeDiff;
+    const threeMinute = 3 * 60 * 1000;
+    const timeLeft = threeMinute - timeDiff;
     return timeLeft > 0 ? timeLeft : 0;
 }
 
@@ -520,7 +531,7 @@ function setupEventHandlers() {
                         <span class="download-count">Downloads: ${formatDownloadCount(adjustDownloadCount(selectedFirmware.url, selectedFirmware.downloadCount))}</span>
                         <span class="release-date">Date: ${formatDate(selectedFirmware.publishedAt)}</span>
                     </div>
-                    <div class="download-url">${selectedFirmware.url}</div>
+                    <div class="download-url">${censorUrl(selectedFirmware.url)}</div>
                 </div>`;
             downloadBtn.textContent = "Download";
             downloadBtn.className = "download-btn unlocked";

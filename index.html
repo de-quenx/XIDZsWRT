@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XIDZs-WRT</title>
+    <link rel="stylesheet" href="quenx.css">
+</head>
+<body>
+    <script>
+        if (sessionStorage.getItem('isAuthenticated') !== 'true') {
+            window.location.href = 'login.html';
+        }
+        const loginTime = localStorage.getItem('loginTime');
+        if (loginTime) {
+            const currentTime = Date.now();
+            const hoursPassed = (currentTime - loginTime) / (1000 * 60 * 60);
+            if (hoursPassed > 24) {
+                sessionStorage.removeItem('isAuthenticated');
+                localStorage.removeItem('loginTime');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+    
+    <div class="wizard-container">
+        <div class="header-flex">
+            <div>
+                <h1 class="animated-text">XIDZs-WRT</h1>
+                <div class="desc animated-desc">Firmware Custom Untuk Berbagai Devices</div>
+            </div>
+            <div class="header-buttons">
+                <button class="search-btn" id="searchBtn">Loading...</button>
+                <button class="theme-toggle" id="themeToggle">Light</button>
+            </div>
+        </div>
+        
+        <div class="firmware-count" id="firmwareCount">Memuat data...</div>
+        <div id="wizard"></div>
+        
+        <div class="footer">
+            © XIDZs-WRT 2025 | Tema - Design By Fidz
+        </div>
+    </div>
+
+    <div id="infoModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Informasi XIDZs-WRT</h2>
+            <ul class="info-list">
+                <li>XIDZs-WRT Adalah Firmware Custom Berbasis OpenWrt Dan ImmortalWrt</li>
+                <li>Firmware Version 23.05.x | 24.10.x</li>
+                <li>IP: 192.168.1.1</li>
+                <li>username: root</li>
+                <li>password: quenx</li>
+                <li>WIFI: XIDZs-WRT | XIDZs-WRT_5G</li>
+                <li>WIFI Key: XIDZs2025</li>
+                <li>Support Berbagai Jenis Devices Populer</li>
+                <li>Support Berbagai Jenis Modem Rakitan</li>
+                <li>EM7430, EM7455, LT4220, L850-GL, L860-GL, DW5821e, T99W175, FM350-GL</li>
+                <li>Aktifkan GPIO STB HG & BH [ /system/startup/rc.local ] </li>
+                <li>Kernel 5.15 - 6.1 (Pilih K5) Kernel 6.6 - 6.12 (Pilih K6) </li>
+                <li>Jika Tidak Berfungsi Berarti Beda Pin GPIO </li>
+                <li>ModSdcard Support EMMC Error Atau Normal ( Jangan Pasang Di EMMC )</li>
+                <li>Disarankan Burning Firmware Use EtchDroid | Rufus</li>
+                <li>Disarankan Reboot Devices Setelah Succes Booting Pertama Kali</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="featuresModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Features</h2>
+            
+            <h3>Fitur - Fitur</h3>
+            <ul class="info-list">
+                <li>Tema Argon ⨯ Tema RTA-wrt</li>
+                <li>Amlogic Service ( Amlogic Devices )</li>
+                <li>3ginfo-Lite ⨯ Modeminfo ⨯ IP Information</li>
+                <li>Fix TTL ⨯ Tailscale</li>
+                <li>Eqosplus  ⨯ Droidnet</li>
+                <li>GPIO LED Support HG680P - B860H</li>
+                <li>MODSDCARD Support HG680P - B860H</li>
+                <li>Tersedia WIFI ON | OFF HG680P - B860H</li>
+                <li>Internet Detector ⨯ Connection Monitor</li>
+                <li>Auto Time Sync ⨯ File Manager</li>
+                <li>Configurasi Openclash ⨯ Nikki ⨯ Passwall</li>
+            </ul>
+            
+            <h3>Khusus Amlogic Devices Tertentu</h3>
+            <ul class="info-list">
+                <li>Kernel Versi 5.15.x</li>
+                <li>Kernel Versi 6.1.x</li>
+                <li>Kernel Versi 6.6.x</li>
+                <li>Kernel Versi 6.12.x</li>
+            </ul>
+            
+            <h3>Tunnel Options</h3>
+            <ul class="info-list">
+                <li>OpenClash</li>
+                <li>OpenClash + Nikki</li>
+                <li>OpenClash + Nikki + Passwall</li>
+                <li>No Tunnel</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="aboutModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>About XIDZs-WRT</h2>
+            <h3>Tentang Project</h3>
+            <p>XIDZs-WRT Adalah Sebuah Firmware Custom Yang Dikembangkan Untuk Komunitas Openwrt Indonesia. Project Ini Bertujuan Untuk Memberikan Pengalaman Networking Yang Lebih Baik Dengan Fitur-Fitur Yang Disesuaikan Dengan Kebutuhan Pengguna.</p>
+        </div>
+    </div>
+
+    <div id="sumberModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Credit</h2>
+            <h3>License & Source</h3>
+            <div class="link-list">
+                <a href="https://github.com/de-quenx/XIDZs-WRT/blob/main/LICENSE" target="_blank">LICENSE</a><br>
+                <a href="https://github.com/rizkikotet-dev/RTA-WRT" target="_blank">RTA-WrtBuilder By RizkiKotet-Dev</a><br>
+                <a href="https://github.com/frizkyiman/friWrt-MyWrtBuilder" target="_blank">friWrt-MyWrtBuilder By frizkyiman</a><br>
+                <a href="https://github.com/Revincx/MyWrtBuilder" target="_blank">MyWrtBuilder By Revincx</a><br>
+                <a href="https://github.com/armarchindo/ULO-Builder/blob/main/ulo" target="_blank">ULO Builder By DBAI</a><br>
+                <a href="https://github.com/ophub" target="_blank">Ophub</a><br>
+                <a href="https://github.com/Dirgha80" target="_blank">Dirgha</a><br>
+            </div>
+        </div>
+    </div>
+
+    <div id="changelogModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Changelog</h2>
+            <h3>01.11.2025</h3>
+            <ul class="info-list">
+                <li>Update To Openwrt 24.10.4</li>
+                <li>Update To Immortalwrt 23.05.7</li>
+                <li>Default Tema Argon v2.4.7-MOD</li>
+                <li>Default Openclash v0.47.017-MOD</li>
+                <li>Default Nikki v1.24.3-MOD</li>
+                <li>Optimasi & revisi Script</li>
+                <li>Add Custom Loginpage 8 Tema</li>
+                <li>Add Netmonitor MOD</li>
+                <li>Any other bugs? Let me know if you find any.</li>
+            </ul>
+            <h3>19.08.2025</h3>
+            <ul class="info-list">
+                <li>Revisi LoginPage</li>
+                <li>Revisi Netmonitor</li>
+                <li>Optimasi Script</li>
+                <li>Fix Modemmanager</li>
+                <li>Update To Openwrt 23.05.6</li>
+                <li>Bug..? Unknown</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="ownerModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Builder</h2>
+            <h3>Kontak & Media Sosial</h3>
+            <div class="link-list">
+                <a href="https://github.com/de-quenx" target="_blank">GitHub Profile</a><br>
+                <a href="https://t.me/xidz_x" target="_blank">Telegram</a><br>
+                <a href="https://www.facebook.com/Fid.Kholiq" target="_blank">Facebook</a><br>
+            </div>
+            <h3>Dukungan dan Support</h3>
+            <p>Jika Anda menyukai project ini, silakan berikan bintang di GitHub dan share ke teman-teman Terimakasih!Ingat itu Gratis Ko...!</p>
+        </div>
+    </div>
+
+    <script src="quenx.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#dedafe">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="XIDZs-WRT - Firmware Custom From Indonesia">
+    <meta name="keywords" content="XIDZs-WRT, OpenWrt, Immortalwrt, Indonesia, Firmware">
+    <meta name="author" content="Fidz">
+    <title>FIRMWARE - XIDZs-WRT</title>
+    <link rel="stylesheet" href="xidz.css">
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='60'>🍥</text></svg>">
+</head>
+<body>
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+    <div class="snowflake">❆</div>
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+    <div class="snowflake">❆</div>
+    <div class="snowflake">❄</div>
+    <div class="snowflake">❅</div>
+    <div class="snowflake">❆</div>
+    <div class="snowflake">❄</div>
+
+    <div id="announcement" class="announcement">
+        <div class="announcement-content">
+            <div class="announcement-icon">📢</div>
+            <div class="announcement-text">
+                <span id="typingText"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="login-container">
+        <div class="logo">XIDZs-WRT</div>
+        <h1>Secure Access</h1>
+        <p class="subtitle">Masukkan Password Untuk Mengakses</p>
+        
+        <form id="loginForm">
+            <div class="input-group">
+                <div class="password-container">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password"
+                        placeholder="Password"
+                        maxlength="50"
+                        required
+                    >
+                    <span class="toggle-password" id="togglePassword">○</span>
+                </div>
+            </div>
+            
+            <button type="submit" id="loginBtn">MASUK</button>
+            
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Memverifikasi Password...</p>
+            </div>
+        </form>
+        
+        <div class="footer">
+            <strong>© XIDZs-WRT 2025</strong> | OPENWRT INDONESIA<br>
+            <small>Jangan Lupa Ngopi Yah</small>
+        </div>
+    </div>
+
+    <div id="notification" class="notification">
+        <span id="notifText"></span>
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <script src="xidz.js"></script>
+</body>
+</html>

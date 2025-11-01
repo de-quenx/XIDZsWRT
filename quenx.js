@@ -3,6 +3,28 @@ let builds = [];
 let selectedFirmware = null;
 let userIP = null;
 let countdownInterval = null;
+const downloadCountCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000;
+
+class GitHubAPILimiter {
+    constructor() {
+        this.requests = [];
+        this.maxRequests = 60;
+        this.timeWindow = 60 * 60 * 1000;
+    }
+    
+    canMakeRequest() {
+        const now = Date.now();
+        this.requests = this.requests.filter(time => now - time < this.timeWindow);
+        return this.requests.length < this.maxRequests;
+    }
+    
+    recordRequest() {
+        this.requests.push(Date.now());
+    }
+}
+
+const apiLimiter = new GitHubAPILimiter();
 
 async function getUserIP() {
     try {
@@ -12,6 +34,56 @@ async function getUserIP() {
     } catch (error) {
         userIP = "unknown";
     }
+}
+
+async function getGitHubDownloadCount(repoOwner, repoName, assetId) {
+    if (!apiLimiter.canMakeRequest()) {
+        return null;
+    }
+    
+    try {
+        apiLimiter.recordRequest();
+        const response = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/releases`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const releases = await response.json();
+        
+        for (const release of releases) {
+            if (release.assets) {
+                const asset = release.assets.find(a => a.id === assetId);
+                if (asset) {
+                    return asset.download_count;
+                }
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error('Failed to fetch GitHub download count:', error);
+        return null;
+    }
+}
+
+async function getCachedDownloadCount(repoOwner, repoName, assetId) {
+    const cacheKey = `github_count_${assetId}`;
+    const cached = downloadCountCache.get(cacheKey);
+    
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+        return cached.count;
+    }
+    
+    const count = await getGitHubDownloadCount(repoOwner, repoName, assetId);
+    if (count !== null) {
+        downloadCountCache.set(cacheKey, {
+            count: count,
+            timestamp: Date.now()
+        });
+        return count;
+    }
+    
+    return cached ? cached.count : null;
 }
 
 function cleanFileName(filename) {
@@ -74,13 +146,31 @@ function censorUrl(url) {
     }
 }
 
-function adjustDownloadCount(firmwareUrl, originalCount) {
-    if (!userIP) return originalCount;
-    const downloadedKey = `downloaded_${firmwareUrl}_${userIP}`;
-    if (localStorage.getItem(downloadedKey)) {
-        return originalCount > 0 ? originalCount - 1 : 0;
+function getLocalDownloadCount(firmwareUrl) {
+    if (!userIP) return 0;
+    const key = `local_download_count_${firmwareUrl}`;
+    const count = localStorage.getItem(key);
+    return count ? parseInt(count) : 0;
+}
+
+function incrementLocalDownloadCount(firmwareUrl) {
+    if (!userIP) return;
+    const key = `local_download_count_${firmwareUrl}`;
+    const currentCount = getLocalDownloadCount(firmwareUrl);
+    localStorage.setItem(key, (currentCount + 1).toString());
+}
+
+async function adjustDownloadCount(firmwareUrl, originalCount, repoOwner, repoName, assetId) {
+    const localCount = getLocalDownloadCount(firmwareUrl);
+    
+    if (assetId && repoOwner && repoName) {
+        const githubCount = await getCachedDownloadCount(repoOwner, repoName, assetId);
+        if (githubCount !== null) {
+            return githubCount + localCount;
+        }
     }
-    return originalCount;
+    
+    return originalCount + localCount;
 }
 
 function getDownloadTimeLeft() {
@@ -249,6 +339,57 @@ function showError(message) {
     }
 }
 
+async function refreshDownloadCounts() {
+    const ul = document.querySelector(".firmware-list ul");
+    if (!ul) return;
+    
+    const selectedInfo = document.querySelector(".selected-info");
+    const promises = [];
+    
+    ul.querySelectorAll("li").forEach((li, index) => {
+        const downloadCountSpan = li.querySelector(".download-count");
+        if (downloadCountSpan && builds[index]) {
+            const build = builds[index];
+            const promise = adjustDownloadCount(build.url, build.downloadCount, build.repoOwner, build.repoName, build.assetId)
+                .then(newCount => {
+                    downloadCountSpan.textContent = `Downloads: ${formatDownloadCount(newCount)}`;
+                });
+            promises.push(promise);
+        }
+    });
+    
+    if (selectedFirmware && selectedInfo) {
+        const promise = adjustDownloadCount(selectedFirmware.url, selectedFirmware.downloadCount, selectedFirmware.repoOwner, selectedFirmware.repoName, selectedFirmware.assetId)
+            .then(newCount => {
+                const downloadCountSpan = selectedInfo.querySelector(".download-count");
+                if (downloadCountSpan) {
+                    downloadCountSpan.textContent = `Downloads: ${formatDownloadCount(newCount)}`;
+                }
+            });
+        promises.push(promise);
+    }
+    
+    await Promise.all(promises);
+}
+
+function extractRepoInfo(url) {
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname === 'github.com') {
+            const pathParts = urlObj.pathname.split('/');
+            if (pathParts.length >= 5 && pathParts[3] === 'releases') {
+                return {
+                    owner: pathParts[1],
+                    name: pathParts[2]
+                };
+            }
+        }
+    } catch (error) {
+        console.error('Failed to extract repo info:', error);
+    }
+    return { owner: null, name: null };
+}
+
 async function loadData() {
     try {
         const res = await fetch(apiURL, { 
@@ -311,12 +452,17 @@ async function loadData() {
                 const cleanName = cleanFileName(asset.name);
                 if (!cleanName) return;
                 
+                const repoInfo = extractRepoInfo(asset.browser_download_url);
+                
                 builds.push({
                     displayName: cleanName,
                     originalName: asset.name,
                     category: getFirmwareCategory(asset.name),
                     device: getDeviceCategory(asset.name),
                     url: asset.browser_download_url,
+                    assetId: asset.id,
+                    repoOwner: repoInfo.owner,
+                    repoName: repoInfo.name,
                     size: asset.size || 0,
                     downloadCount: typeof asset.download_count === "number" ? asset.download_count : 0,
                     publishedAt: rel.published_at || rel.created_at || null
@@ -466,7 +612,7 @@ function setupEventHandlers() {
         };
     });
 
-    function renderList(filter = "") {
+    async function renderList(filter = "") {
         ul.innerHTML = "";
         let filtered = builds;
         
@@ -490,7 +636,8 @@ function setupEventHandlers() {
             return;
         }
         
-        searchFiltered.forEach(b => {
+        const promises = searchFiltered.map(async b => {
+            const adjustedDownloadCount = await adjustDownloadCount(b.url, b.downloadCount, b.repoOwner, b.repoName, b.assetId);
             const li = document.createElement("li");
             li.innerHTML = `
                 <div class="firmware-info">
@@ -498,7 +645,7 @@ function setupEventHandlers() {
                     <div class="firmware-meta">
                         <span class="device-type">${b.device.toUpperCase()}</span>
                         <span class="file-size">Size: ${formatFileSize(b.size)}</span>
-                        <span class="download-count">Downloads: ${formatDownloadCount(adjustDownloadCount(b.url, b.downloadCount))}</span>
+                        <span class="download-count">Downloads: ${formatDownloadCount(adjustedDownloadCount)}</span>
                         <span class="release-date">Date: ${formatDate(b.publishedAt)}</span>
                     </div>
                 </div>`;
@@ -520,15 +667,18 @@ function setupEventHandlers() {
             };
             ul.appendChild(li);
         });
+        
+        await Promise.all(promises);
     }
 
-    function updateDownloadSection() {
+    async function updateDownloadSection() {
         const selectedInfo = document.querySelector(".selected-info");
         const downloadBtn = document.getElementById("downloadBtn");
         
         if (!selectedInfo || !downloadBtn) return;
         
         if (selectedFirmware) {
+            const adjustedDownloadCount = await adjustDownloadCount(selectedFirmware.url, selectedFirmware.downloadCount, selectedFirmware.repoOwner, selectedFirmware.repoName, selectedFirmware.assetId);
             selectedInfo.innerHTML = `
                 <div class="firmware-selected">
                     <div class="firmware-details">
@@ -537,7 +687,7 @@ function setupEventHandlers() {
                         <small>Device: ${selectedFirmware.device.toUpperCase()}</small><br>
                         <small style="color: var(--secondary-color);">File: ${selectedFirmware.originalName}</small>
                         <span class="file-size">Size: ${formatFileSize(selectedFirmware.size)}</span>
-                        <span class="download-count">Downloads: ${formatDownloadCount(adjustDownloadCount(selectedFirmware.url, selectedFirmware.downloadCount))}</span>
+                        <span class="download-count">Downloads: ${formatDownloadCount(adjustedDownloadCount)}</span>
                         <span class="release-date">Date: ${formatDate(selectedFirmware.publishedAt)}</span>
                     </div>
                     <div class="download-url">${censorUrl(selectedFirmware.url)}</div>
@@ -564,15 +714,14 @@ function handleDownload() {
         return;
     }
     
-    const downloadedKey = `downloaded_${selectedFirmware.url}_${userIP}`;
-    const wasDownloaded = localStorage.getItem(downloadedKey);
-    
-    if (!wasDownloaded) {
-        localStorage.setItem(downloadedKey, "true");
-    }
+    incrementLocalDownloadCount(selectedFirmware.url);
     
     setDownloadDelay();
     startCountdown();
+    
+    setTimeout(() => {
+        refreshDownloadCounts();
+    }, 500);
     
     window.open(selectedFirmware.url, "_blank");
 }

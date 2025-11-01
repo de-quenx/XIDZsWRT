@@ -30,7 +30,7 @@ function setStorageData(key, value) {
 const validationRules = {
     minLength: 8,
     maxAttempts: 3,
-    normalLockDuration: 50000,
+    normalLockDuration: 60000,
     profanityLockDuration: 980000,
     minPasswords: 1,
     maxPasswords: 1

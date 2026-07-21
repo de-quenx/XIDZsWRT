@@ -1,0 +1,127 @@
+proxy-providers:
+  ID:
+    type: file
+    path: ./providers/proxy/id.yaml
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 120
+  MIX:
+    type: file
+    path: ./providers/proxy/mix.yaml
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 120
+proxy-groups:
+- name: AUTO-ID-MIX
+  type: fallback
+  disable-udp: false
+  use:
+  - ID
+  - MIX
+  url: http://www.gstatic.com/generate_204
+  interval: 120
+- name: LB-MIX-ID
+  type: load-balance
+  strategy: consistent-hashing
+  disable-udp: false
+  use:
+  - MIX
+  - ID
+  url: http://www.gstatic.com/generate_204
+  interval: 120
+- name: SERVER-UMUM
+  type: select
+  disable-udp: false
+  proxies:
+  - AUTO-ID-MIX
+  - LB-MIX-ID
+  - DIRECT
+- name: SERVER-INDO
+  type: select
+  disable-udp: false
+  proxies:
+  - AUTO-ID-MIX
+  - DIRECT
+- name: SERVER-GAME
+  type: select
+  disable-udp: false
+  proxies:
+  - AUTO-ID-MIX
+  - DIRECT
+- name: BLOCK-IKLAN
+  type: select
+  disable-udp: false
+  proxies:
+  - REJECT
+  - SERVER-UMUM
+rule-providers:
+  Game:
+    type: file
+    behavior: classical
+    path: ./providers/rule/game.yaml
+  PortGame:
+    type: file
+    behavior: classical
+    path: ./providers/rule/portgame.yaml
+  Umum:
+    type: file
+    behavior: classical
+    path: ./providers/rule/umum.yaml
+  indo:
+    type: file
+    behavior: classical
+    path: ./providers/rule/indo.yaml
+  Sosmed:
+    type: file
+    behavior: classical
+    path: ./providers/rule/sosmed.yaml
+  Streaming:
+    type: file
+    behavior: classical
+    path: ./providers/rule/streaming.yaml
+  Bankid:
+    type: file
+    behavior: domain
+    path: ./providers/rule/bankid.yaml
+  Tiktok:
+    type: file
+    behavior: domain
+    path: ./providers/rule/tiktok.yaml
+  Meta:
+    type: file
+    behavior: domain
+    path: ./providers/rule/meta.yaml
+rules:
+- RULE-SET,Umum,SERVER-UMUM
+- RULE-SET,Game,SERVER-GAME
+- RULE-SET,PortGame,SERVER-GAME
+- RULE-SET,indo,SERVER-INDO
+- RULE-SET,Sosmed,SERVER-INDO
+- RULE-SET,Streaming,SERVER-UMUM
+- RULE-SET,Bankid,SERVER-INDO
+- RULE-SET,Tiktok,SERVER-UMUM
+- RULE-SET,Meta,SERVER-INDO
+- MATCH,SERVER-UMUM
+dns:
+  enable: true
+  ipv6: true
+  default-nameserver:
+    - 8.8.8.8
+    - 8.8.4.4
+  fallback:
+    - 1.0.0.1
+    - 8.8.4.4
+    - 149.112.112.112
+  nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 9.9.9.9
+  proxy-server-nameserver:
+    - 112.215.203.246
+    - 112.215.203.247
+    - 112.215.203.248
+    - 112.215.203.254
+    - 112.215.198.248
+    - 112.215.198.254

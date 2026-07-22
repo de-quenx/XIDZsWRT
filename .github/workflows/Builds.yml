@@ -25,6 +25,9 @@ on:
           - "768"
           - "1024"
           - "1280"
+          - "2560"
+          - "4096"
+          - "8192"
       target:
         description: "Select device board"
         required: true
